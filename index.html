@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PortfolioAI — Build Your Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Share+Tech+Mono&family=Bebas+Neue&family=VT323&family=Orbitron:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;font-family:'Instrument Sans',sans-serif;}
+
+.app{width:100%;min-height:100vh;position:relative;transition:background-color 1.2s cubic-bezier(0.4,0,0.2,1);}
+
+.d-logo{font-size:12px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:20px;padding:48px 32px 0;text-align:center;}
+.d-title{font-size:clamp(40px,7vw,80px);line-height:0.95;letter-spacing:-0.03em;margin-bottom:14px;padding:0 32px;text-align:center;}
+.d-sub{font-size:14px;line-height:1.7;margin-bottom:36px;max-width:520px;padding:0 32px;opacity:0.7;text-align:center;margin-left:auto;margin-right:auto;}
+
+.form-layer{position:relative;z-index:10;padding:0 32px;max-width:720px;margin:0 auto;}
+
+.stepnav{display:flex;align-items:center;margin-bottom:32px;justify-content:center;}
+.sn{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(128,128,128,0.5);cursor:pointer;transition:color 0.3s;}
+.sn.active{color:inherit;opacity:1;}
+.sn.done{color:inherit;opacity:0.4;}
+.sn-num{width:20px;height:20px;border-radius:50%;border:0.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0;transition:all 0.3s;opacity:0.6;}
+.sn.active .sn-num{opacity:1;background:currentColor;}
+.sn.active .sn-num span{mix-blend-mode:difference;color:white;}
+.sn.done .sn-num{opacity:0.4;}
+.sn-line{width:48px;height:0.5px;background:currentColor;opacity:0.18;margin:0 12px;}
+
+.panel{display:none;padding-bottom:48px;animation:fadeUp 0.4s ease both;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* error banner */
+.err-banner{display:none;background:rgba(220,38,38,0.08);border:0.5px solid rgba(220,38,38,0.3);border-radius:8px;padding:11px 15px;font-size:12px;color:#dc2626;margin-bottom:14px;line-height:1.55;}
+.err-banner.show{display:block;}
+
+/* upload */
+.upload-zone{border:0.5px dashed rgba(128,128,128,0.4);border-radius:12px;padding:32px 24px;text-align:center;cursor:pointer;position:relative;margin-bottom:6px;background:rgba(128,128,128,0.04);transition:all 0.2s;}
+.upload-zone:hover{background:rgba(128,128,128,0.08);border-color:rgba(128,128,128,0.65);}
+.upload-zone.valid{border-color:rgba(34,197,94,0.6);border-style:solid;background:rgba(34,197,94,0.05);}
+.upload-zone.invalid{border-color:rgba(220,38,38,0.5);border-style:solid;}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:28px;margin-bottom:10px;}
+.upload-lbl{font-size:14px;color:inherit;opacity:0.85;}
+.upload-lbl span{opacity:1;font-weight:600;}
+.upload-hint{font-size:12px;opacity:0.5;margin-top:4px;}
+.upload-status{font-size:12px;font-weight:500;margin-top:10px;}
+.upload-status.ok{color:#16a34a;}
+.upload-status.err{color:#dc2626;}
+.field-err{font-size:11px;color:#dc2626;margin-top:3px;margin-bottom:8px;display:none;}
+.field-err.show{display:block;}
+
+.or-div{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:10px;opacity:0.3;text-transform:uppercase;letter-spacing:0.12em;}
+.or-div::before,.or-div::after{content:'';flex:1;height:0.5px;background:currentColor;}
+
+/* progress */
+.prog-wrap{margin-bottom:14px;}
+.prog-top{font-size:10px;opacity:0.45;margin-bottom:4px;display:flex;justify-content:space-between;}
+.prog-bar{height:2px;background:rgba(128,128,128,0.15);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:#16a34a;border-radius:2px;transition:width 0.4s ease;width:0%;}
+
+/* info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;}
+.ib{border:0.5px solid rgba(128,128,128,0.25);border-radius:10px;padding:14px 16px;background:rgba(255,255,255,0.5);transition:border-color 0.2s,background 0.2s;}
+.ib:focus-within{border-color:rgba(128,128,128,0.55);background:rgba(255,255,255,0.75);}
+.ib.full{grid-column:1/-1;}
+.ib.invalid{border-color:rgba(220,38,38,0.5) !important;background:rgba(220,38,38,0.04) !important;}
+.ib.highlight{border-color:rgba(234,179,8,0.55) !important;background:rgba(234,179,8,0.05) !important;}
+.ib-lbl{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;opacity:0.7;margin-bottom:8px;display:flex;align-items:center;gap:4px;}
+.req{color:#dc2626;font-size:12px;font-weight:700;}
+.ib-input{width:100%;background:transparent;border:none;outline:none;font-size:14px;line-height:1.6;resize:none;color:inherit;font-family:'Instrument Sans',sans-serif;opacity:1;}
+.ib-input::placeholder{opacity:0.4;color:inherit;font-size:13px;}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:20px;border:0.5px solid rgba(128,128,128,0.35);font-size:12px;opacity:0.9;color:inherit;background:rgba(255,255,255,0.4);}
+.tag-chip button{background:none;border:none;cursor:pointer;color:inherit;font-size:13px;padding:0;line-height:1;opacity:0.5;}
+.tag-chip button:hover{opacity:1;}
+.tag-input{background:transparent;border:none;outline:none;font-size:13px;padding:4px 6px;min-width:90px;color:inherit;font-family:'Instrument Sans',sans-serif;flex:1;}
+.tag-input::placeholder{opacity:0.4;color:inherit;}
+
+/* theme grid */
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.tc{border:0.5px solid rgba(128,128,128,0.25);border-radius:10px;padding:0;cursor:pointer;background:transparent;transition:transform 0.15s,box-shadow 0.2s;overflow:hidden;}
+.tc:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+.tc.selected{border:1.5px solid currentColor;box-shadow:0 0 0 3px rgba(128,128,128,0.08);}
+.tc-preview{height:78px;padding:9px 10px;display:flex;flex-direction:column;justify-content:space-between;border-bottom:0.5px solid rgba(128,128,128,0.15);position:relative;overflow:hidden;}
+.tc-preview-name{font-size:11px;font-weight:700;line-height:1;letter-spacing:-0.01em;}
+.tc-preview-bubble{align-self:flex-start;font-size:8.5px;padding:3px 7px;border-radius:3px;max-width:80%;line-height:1.3;}
+.tc-meta{padding:8px 10px 9px;background:rgba(128,128,128,0.04);}
+.tc-name{font-size:11px;font-weight:600;color:inherit;}
+.tc-desc{font-size:10px;opacity:0.55;margin-top:2px;}
+
+.bot-toggle{width:100%;padding:10px 15px;border:0.5px solid rgba(128,128,128,0.22);border-radius:8px;font-size:12px;cursor:pointer;background:transparent;text-align:left;color:inherit;font-family:'Instrument Sans',sans-serif;margin-bottom:12px;opacity:0.55;transition:opacity 0.2s,border-color 0.2s;}
+.bot-toggle:hover,.bot-toggle.open{opacity:1;border-color:rgba(128,128,128,0.5);}
+.bot-box{border:0.5px solid rgba(128,128,128,0.18);border-radius:10px;overflow:hidden;margin-bottom:16px;}
+.bot-msgs{padding:12px 14px;min-height:90px;max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.bm{font-size:11px;line-height:1.65;padding:8px 11px;border-radius:8px;max-width:85%;}
+.bm.bot{background:rgba(128,128,128,0.08);color:inherit;opacity:0.7;align-self:flex-start;}
+.bm.user{background:rgba(128,128,128,0.15);color:inherit;align-self:flex-end;}
+.bot-ir{display:flex;gap:7px;padding:9px 12px;border-top:0.5px solid rgba(128,128,128,0.15);}
+.bot-ir input{flex:1;font-size:11px;padding:7px 10px;border:0.5px solid rgba(128,128,128,0.22);border-radius:6px;background:rgba(128,128,128,0.05);color:inherit;outline:none;font-family:'Instrument Sans',sans-serif;}
+.bot-ir input::placeholder{color:inherit;opacity:0.3;}
+.bot-ir button{padding:7px 14px;border-radius:6px;border:none;background:currentColor;font-size:11px;cursor:pointer;font-family:'Instrument Sans',sans-serif;font-weight:600;}
+.bot-ir button span{mix-blend-mode:difference;color:white;display:block;}
+
+/* buttons */
+.btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:20px;gap:12px;padding-bottom:4px;}
+.dbtn{padding:11px 26px;border-radius:6px;font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:0.5px solid rgba(128,128,128,0.3);background:transparent;color:inherit;opacity:0.55;transition:opacity 0.2s;letter-spacing:0.06em;text-transform:uppercase;}
+.dbtn:hover{opacity:1;}
+.dbtn.primary{background:currentColor;opacity:1;border:none;}
+.dbtn.primary span{mix-blend-mode:difference;color:white;display:block;}
+
+/* generating */
+.gen-box{text-align:center;padding:72px 20px;}
+.gen-spin{width:32px;height:32px;border:1.5px solid rgba(128,128,128,0.2);border-top-color:currentColor;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 18px;opacity:0.7;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.gen-title{font-size:24px;margin-bottom:8px;opacity:0.9;}
+.gen-sub{font-size:13px;opacity:0.45;}
+
+/* done */
+.done-wrap{padding-bottom:48px;}
+
+/* preview */
+.preview-head{margin-bottom:14px;}
+.preview-eyebrow{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;opacity:0.5;margin-bottom:4px;}
+.preview-title{font-size:22px;opacity:0.95;}
+.preview-frame{border:0.5px solid rgba(128,128,128,0.3);border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.4);margin-bottom:14px;height:480px;}
+.preview-frame iframe{width:100%;height:100%;border:none;display:block;background:#fff;}
+.preview-theme-strip{margin-bottom:14px;}
+.preview-theme-lbl{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.5;margin-bottom:8px;}
+.theme-mini-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.tm{border:0.5px solid rgba(128,128,128,0.25);border-radius:8px;overflow:hidden;cursor:pointer;height:44px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;transition:transform 0.12s,box-shadow 0.2s;position:relative;}
+.tm:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.tm.selected{outline:1.5px solid currentColor;outline-offset:1px;}
+.tm-empty{opacity:0.3;border-style:dashed;cursor:default;}
+.tm-empty:hover{transform:none;box-shadow:none;}
+.preview-vibe{display:flex;gap:8px;margin-bottom:6px;}
+.preview-vibe input{flex:1;padding:11px 14px;border:0.5px solid rgba(128,128,128,0.3);border-radius:8px;background:rgba(255,255,255,0.5);font-family:'Instrument Sans',sans-serif;font-size:13px;outline:none;color:inherit;}
+.preview-vibe input::placeholder{opacity:0.45;color:inherit;}
+.preview-vibe input:focus{border-color:rgba(128,128,128,0.55);}
+.preview-vibe button{padding:11px 16px;border-radius:8px;border:none;background:currentColor;font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.04em;white-space:nowrap;}
+.preview-vibe button span,.preview-vibe button{color:white;mix-blend-mode:normal;}
+.preview-vibe button:disabled{opacity:0.5;cursor:wait;}
+.preview-vibe-status{font-size:11px;opacity:0.6;min-height:16px;margin-bottom:14px;}
+.preview-vibe-status.err{color:#dc2626;opacity:1;}
+.preview-vibe-status.ok{color:#16a34a;opacity:1;}
+
+@media(max-width:600px){
+  .theme-mini-grid{grid-template-columns:repeat(4,1fr);}
+  .preview-frame{height:380px;}
+}
+.done-box{border:0.5px solid rgba(34,197,94,0.35);border-radius:10px;padding:24px;text-align:center;margin-bottom:16px;background:rgba(34,197,94,0.05);}
+.done-icon{font-size:30px;margin-bottom:10px;}
+.done-title{font-size:22px;margin-bottom:7px;opacity:0.9;}
+.done-sub{font-size:12px;opacity:0.55;line-height:1.65;}
+.dl-btn{width:100%;padding:14px;border-radius:6px;border:none;background:currentColor;font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:14px;display:block;}
+.dl-btn span{mix-blend-mode:difference;color:white;display:block;}
+.steps-box{border:0.5px solid rgba(128,128,128,0.18);border-radius:10px;padding:16px 18px;background:rgba(128,128,128,0.04);margin-bottom:12px;}
+.steps-box h3{font-size:9px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;opacity:0.35;margin-bottom:12px;}
+.si{display:flex;gap:9px;margin-bottom:10px;font-size:12px;line-height:1.55;opacity:0.65;}
+.si:last-child{margin-bottom:0;}
+.si-n{width:17px;height:17px;border-radius:50%;background:currentColor;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.si-n span{mix-blend-mode:difference;color:white;}
+.si a{color:inherit;text-decoration:underline;opacity:0.8;}
+
+/* dots */
+.tdots{position:fixed;bottom:20px;right:24px;display:flex;gap:6px;z-index:100;align-items:center;}
+.tdot{width:18px;height:2px;border-radius:2px;opacity:0.2;cursor:pointer;transition:width 0.4s,opacity 0.4s;background:currentColor;}
+.tdot.active{opacity:0.7;width:32px;}
+.tpause{margin-left:10px;background:transparent;border:0.5px solid currentColor;border-radius:50%;width:22px;height:22px;cursor:pointer;opacity:0.35;transition:opacity 0.3s;color:inherit;display:flex;align-items:center;justify-content:center;padding:0;font-family:inherit;}
+.tpause:hover{opacity:0.85;}
+.tpause.paused{opacity:0.85;}
+.tpause svg{width:9px;height:9px;fill:currentColor;}
+
+@media(max-width:600px){
+  .d-logo{padding:24px 20px 0;}
+  .d-title{padding:0 20px;font-size:44px;}
+  .d-sub{padding:0 20px;}
+  .form-layer{padding:0 20px;}
+  .info-grid{grid-template-columns:1fr;}
+  .theme-grid{grid-template-columns:repeat(2,1fr);}
+  .ib.full{grid-column:1/-1;}
+}
+
+/* footer */
+.site-footer{margin:64px auto 28px;padding:24px 32px 12px;text-align:center;max-width:680px;border-top:0.5px solid currentColor;border-top-color:rgba(128,128,128,0.18);position:relative;z-index:5;}
+.sf-row{font-size:12px;line-height:1.7;opacity:0.65;}
+.sf-row.sf-muted{font-size:11px;opacity:0.4;}
+.sf-row a{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:0.5px;opacity:0.85;transition:opacity 0.2s;}
+.sf-row a:hover{opacity:1;}
+@media(max-width:600px){.site-footer{padding:20px 20px 12px;margin-top:40px;}}
+</style>
+<script type="module">
+  import * as pdfjsLib from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs';
+  window.pdfjsLib = pdfjsLib;
+</script>
+</head>
+<body>
+
+<div class="app" id="app">
+  <div class="d-logo" id="d-logo">PortfolioAI</div>
+  <div class="d-title" id="d-title">Your identity.<br>Your bot.</div>
+  <div class="d-sub" id="d-sub">Upload your CV, pick a theme, get a shareable AI portfolio chatbot — free, no code needed.</div>
+
+  <div class="form-layer">
+    <div class="stepnav">
+      <div class="sn active" id="sn1"><div class="sn-num"><span>1</span></div><span>Your Info</span></div>
+      <div class="sn-line"></div>
+      <div class="sn" id="sn2"><div class="sn-num"><span>2</span></div><span>Theme</span></div>
+      <div class="sn-line"></div>
+      <div class="sn" id="sn3"><div class="sn-num"><span>3</span></div><span>Generate</span></div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="panel active" id="panel1">
+      <div class="err-banner" id="main-err"></div>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="cv-file" accept=".pdf,.txt"/>
+        <div class="upload-icon">📄</div>
+        <div class="upload-lbl"><span>Drop your CV here</span> or click to browse</div>
+        <div class="upload-hint">PDF or TXT — we'll do the rest</div>
+        <div class="upload-status" id="upload-status"></div>
+      </div>
+      <div class="field-err" id="upload-err"></div>
+
+      <div class="or-div">or fill in manually</div>
+
+      <div class="prog-wrap" id="prog-wrap" style="display:none;">
+        <div class="prog-top"><span>Profile completeness</span><span id="prog-pct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+      </div>
+
+      <div class="info-grid">
+        <div class="ib" id="ib-name">
+          <div class="ib-lbl">Full name <span class="req">*</span></div>
+          <input class="ib-input" id="f-name" type="text" placeholder="Jane Doe" oninput="updateProgress()"/>
+        </div>
+        <div class="ib">
+          <div class="ib-lbl">Title</div>
+          <input class="ib-input" id="f-title" type="text" placeholder="Software Engineer" oninput="updateProgress()"/>
+        </div>
+        <div class="ib full">
+          <div class="ib-lbl">Education</div>
+          <textarea class="ib-input" id="f-edu" rows="3" placeholder="BSc Computer Science, University of XYZ (2020–2024)" oninput="updateProgress()"></textarea>
+        </div>
+        <div class="ib full">
+          <div class="ib-lbl">Experience</div>
+          <textarea class="ib-input" id="f-exp" rows="3" placeholder="Software Intern at Acme Corp — built X, worked on Y..." oninput="updateProgress()"></textarea>
+        </div>
+        <div class="ib full">
+          <div class="ib-lbl">Projects</div>
+          <textarea class="ib-input" id="f-proj" rows="3" placeholder="ProjectName — what it does, tech used, link..." oninput="updateProgress()"></textarea>
+        </div>
+        <div class="ib">
+          <div class="ib-lbl">Skills</div>
+          <div class="tag-wrap" id="skills-wrap">
+            <input class="tag-input" type="text" placeholder="type + enter" onkeydown="handleTagInput(event,'skills-wrap')"/>
+          </div>
+        </div>
+        <div class="ib">
+          <div class="ib-lbl">Languages</div>
+          <div class="tag-wrap" id="langs-wrap">
+            <input class="tag-input" type="text" placeholder="type + enter" onkeydown="handleTagInput(event,'langs-wrap')"/>
+          </div>
+        </div>
+        <div class="ib">
+          <div class="ib-lbl">Certificates</div>
+          <textarea class="ib-input" id="f-certs" rows="3" placeholder="AWS Certified&#10;Google Cloud Associate" oninput="updateProgress()"></textarea>
+        </div>
+        <div class="ib">
+          <div class="ib-lbl">Contact</div>
+          <textarea class="ib-input" id="f-contact" rows="3" placeholder="jane@email.com&#10;github.com/jane&#10;New York, USA" oninput="updateProgress()"></textarea>
+        </div>
+        <div class="ib full">
+          <div class="ib-lbl">Anything else</div>
+          <textarea class="ib-input" id="f-extra" rows="2" placeholder="Goals, interests, target roles, fun facts..." oninput="updateProgress()"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row" style="justify-content:center;">
+        <button class="dbtn primary" onclick="validateAndNext()"><span>Next: pick theme →</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="panel" id="panel2">
+      <div class="theme-grid">
+        <div class="tc selected" data-theme="corporate">
+          <div class="tc-preview" style="background:#F8F9FA;color:#1C1C2E;font-family:'Instrument Serif',serif;">
+            <div class="tc-preview-name">Reema</div>
+            <div class="tc-preview-bubble" style="background:#fff;border:1px solid #E5E7EB;color:#6B7280;font-family:'Instrument Sans',sans-serif;">Hi! Ask me anything.</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Corporate</div><div class="tc-desc">Clean serif</div></div>
+        </div>
+        <div class="tc" data-theme="matrix">
+          <div class="tc-preview" style="background:#0D1F1A;color:#4ade80;font-family:'Share Tech Mono',monospace;">
+            <div class="tc-preview-name">&gt; REEMA</div>
+            <div class="tc-preview-bubble" style="background:#122820;border:1px solid rgba(74,222,128,0.3);color:#86c4a0;">$ ready_</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Matrix</div><div class="tc-desc">Terminal green</div></div>
+        </div>
+        <div class="tc" data-theme="y2k">
+          <div class="tc-preview" style="background:#e8f4ff;color:#7c3aed;font-family:'VT323',monospace;">
+            <div class="tc-preview-name" style="font-size:14px;">★ Reema ★</div>
+            <div class="tc-preview-bubble" style="background:#fff;border:1px solid #a855f7;color:#6d28d9;font-size:10px;">hi!! :)</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Y2K</div><div class="tc-desc">Pixel nostalgia</div></div>
+        </div>
+        <div class="tc" data-theme="cyber">
+          <div class="tc-preview" style="background:#08030F;color:#00fff5;font-family:'Orbitron',sans-serif;">
+            <div class="tc-preview-name" style="letter-spacing:0.1em;">REEMA</div>
+            <div class="tc-preview-bubble" style="background:rgba(0,255,245,0.04);border:1px solid rgba(0,255,245,0.35);color:#ff00aa;font-family:'IBM Plex Mono',monospace;">&gt; online_</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Cyber</div><div class="tc-desc">Neon dark</div></div>
+        </div>
+        <div class="tc" data-theme="aero">
+          <div class="tc-preview" style="background:#dff0ff;color:#0a3d62;font-family:'Syne',sans-serif;">
+            <div class="tc-preview-name" style="font-weight:800;">Reema</div>
+            <div class="tc-preview-bubble" style="background:rgba(255,255,255,0.85);border:1px solid #a8d8ea;color:#1a6fa0;font-family:'Instrument Sans',sans-serif;">Hello there!</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Frutiger Aero</div><div class="tc-desc">Glassy blue</div></div>
+        </div>
+        <div class="tc" data-theme="brutal">
+          <div class="tc-preview" style="background:#F5F500;color:#000;font-family:'Bebas Neue',sans-serif;">
+            <div class="tc-preview-name" style="font-size:14px;letter-spacing:0.05em;">REEMA.</div>
+            <div class="tc-preview-bubble" style="background:#fff;border:1px solid #000;color:#000;font-family:'IBM Plex Mono',monospace;">HELLO.</div>
+          </div>
+          <div class="tc-meta"><div class="tc-name">Brutalist</div><div class="tc-desc">Raw & bold</div></div>
+        </div>
+      </div>
+
+      <button class="bot-toggle" id="bot-toggle" onclick="toggleBot()">+ Design my own theme with AI →</button>
+      <div class="bot-box" id="bot-box" style="display:none;">
+        <div class="bot-msgs" id="bot-msgs">
+          <div class="bm bot">Describe a vibe — colors, mood, aesthetic. e.g. "deep-sea bioluminescent", "warm minimal beige", "Y2K cyber-pop". I'll generate a custom theme just for you.</div>
+        </div>
+        <div class="bot-ir">
+          <input type="text" id="bot-input" placeholder="e.g. dark academia, moody greens..." onkeydown="if(event.key==='Enter')sendBot()"/>
+          <button onclick="sendBot()"><span>Send</span></button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="dbtn" onclick="goStep(1)">← Back</button>
+        <button class="dbtn primary" onclick="doGenerate()"><span>✦ Generate my bot</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="panel" id="panel3">
+      <div class="gen-box" id="gen-box">
+        <div class="gen-spin"></div>
+        <div class="gen-title">Building your bot...</div>
+        <div class="gen-sub">Mixing your info, theme, and AI brain together</div>
+      </div>
+      <div class="done-wrap" id="done-wrap" style="display:none;">
+        <div class="preview-head">
+          <div class="preview-eyebrow">Live preview · try it before you download</div>
+          <div class="preview-title" id="preview-title">Your bot is ready</div>
+        </div>
+
+        <div class="preview-frame">
+          <iframe id="preview-iframe" title="bot preview"></iframe>
+        </div>
+
+        <div class="preview-theme-strip">
+          <div class="preview-theme-lbl">Swap theme:</div>
+          <div class="theme-mini-grid" id="theme-mini-grid"></div>
+        </div>
+
+        <div class="preview-vibe">
+          <input type="text" id="preview-vibe-input" placeholder="Or type a new vibe — e.g. moody academia, sunset desert..." onkeydown="if(event.key==='Enter')regenVibeFromPreview()"/>
+          <button id="preview-vibe-btn" onclick="regenVibeFromPreview()">✨ Generate</button>
+        </div>
+        <div class="preview-vibe-status" id="preview-vibe-status"></div>
+
+        <button class="dl-btn" id="dl-btn"><span>↓ Download index.html</span></button>
+
+        <div class="steps-box">
+          <h3>Go live on GitHub Pages</h3>
+          <div class="si"><div class="si-n"><span>1</span></div><div>Go to <a href="https://github.com/new" target="_blank">github.com/new</a> → name your repo <strong>yourusername.github.io</strong> → set to Public → Create.</div></div>
+          <div class="si"><div class="si-n"><span>2</span></div><div>Click "uploading an existing file" → upload your <strong>index.html</strong> → Commit changes.</div></div>
+          <div class="si"><div class="si-n"><span>3</span></div><div>Go to Settings → Pages → Branch: main → Save. Wait about 2 minutes.</div></div>
+          <div class="si"><div class="si-n"><span>4</span></div><div>Visit <strong>yourusername.github.io</strong> — put the link on your LinkedIn and resume!</div></div>
+        </div>
+        <button class="dbtn" onclick="startOver()" style="width:100%;text-align:center;margin-top:10px;">Build another bot →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tdots" id="tdots">
+    <div class="tdot active" data-i="0"></div>
+    <div class="tdot" data-i="1"></div>
+    <div class="tdot" data-i="2"></div>
+    <div class="tdot" data-i="3"></div>
+    <div class="tdot" data-i="4"></div>
+    <div class="tdot" data-i="5"></div>
+    <button class="tpause" id="tpause" title="Pause theme rotation" aria-label="Pause theme rotation">
+      <svg viewBox="0 0 10 10" id="tpause-icon"><rect x="2" y="1.5" width="2" height="7"/><rect x="6" y="1.5" width="2" height="7"/></svg>
+    </button>
+  </div>
+
+  <footer class="site-footer">
+    <div class="sf-row">See it in action: <a href="https://reemaotaibi.github.io" target="_blank" rel="noopener">reemaotaibi.github.io</a></div>
+    <div class="sf-row sf-muted">AI can make mistakes. Review your bot before sharing it.</div>
+    <div class="sf-row sf-muted">Built by <a href="https://reemaotaibi.github.io" target="_blank" rel="noopener">@reemaotaibi</a> · Free forever · Hosted on GitHub Pages</div>
+  </footer>
+</div>
+
+<script>
+// ============================================================
+// THEME MORPHING
+// ============================================================
+const pageThemes = [
+  {bg:'#F8F9FA',color:'#1C1C2E',logo:{t:'PortfolioAI',f:"'Instrument Sans',sans-serif",s:'12px',w:'600',ls:'0.18em'},title:{t:'Your identity.<br>Your bot.',f:"'Instrument Serif',Georgia,serif",s:'clamp(40px,7vw,80px)'},sub:{t:'Upload your CV, pick a theme, get a shareable AI portfolio chatbot — free, no code needed.',f:"'Instrument Sans',sans-serif",s:'14px'}},
+  {bg:'#0D1F1A',color:'#4ade80',logo:{t:'// PortfolioAI',f:"'Share Tech Mono',monospace",s:'11px',w:'400',ls:'0.3em'},title:{t:'your_identity.<br>your_bot.',f:"'Share Tech Mono',monospace",s:'clamp(36px,6vw,68px)'},sub:{t:'$ upload --cv | pick --theme | deploy --free --no-code',f:"'Share Tech Mono',monospace",s:'13px'}},
+  {bg:'#e8f4ff',color:'#7c3aed',logo:{t:'* PortfolioAI *',f:"'VT323',monospace",s:'18px',w:'400',ls:'0.15em'},title:{t:'UR IDENTITY.<br>UR BOT.',f:"'VT323',monospace",s:'clamp(56px,9vw,96px)'},sub:{t:'Upload ur CV!! pick a theme!! get ur AI portfolio bot free + no code!! :)',f:"'VT323',monospace",s:'18px'}},
+  {bg:'#08030F',color:'#00fff5',logo:{t:'[ PORTFOLIO_AI v2.0 ]',f:"'Orbitron',sans-serif",s:'10px',w:'700',ls:'0.3em'},title:{t:'YOUR<br>IDENTITY.<br>YOUR BOT.',f:"'Orbitron',sans-serif",s:'clamp(28px,5vw,52px)'},sub:{t:'// upload cv_file. select aesthetic. deploy. free. zero_code_required.',f:"'IBM Plex Mono',monospace",s:'12px'}},
+  {bg:'#dff0ff',color:'#0a3d62',logo:{t:'PortfolioAI',f:"'Syne',sans-serif",s:'12px',w:'700',ls:'0.15em'},title:{t:'Your identity.<br>Your bot.',f:"'Syne',sans-serif",s:'clamp(40px,7vw,76px)'},sub:{t:'Upload your CV, pick a theme, get a beautiful AI portfolio chatbot — free and effortless.',f:"'Instrument Sans',sans-serif",s:'14px'}},
+  {bg:'#F5F500',color:'#000000',logo:{t:'PORTFOLIOAI',f:"'Bebas Neue',sans-serif",s:'16px',w:'400',ls:'0.3em'},title:{t:'YOUR IDENTITY.<br>YOUR BOT.',f:"'Bebas Neue',sans-serif",s:'clamp(48px,8vw,100px)'},sub:{t:'Upload CV. Pick theme. Get bot. Free. No code. Done.',f:"'IBM Plex Mono',monospace",s:'13px'}}
+];
+
+let ci = 0, autoTimer;
+const appEl = document.getElementById('app');
+const logoEl = document.getElementById('d-logo');
+const titleEl = document.getElementById('d-title');
+const subEl = document.getElementById('d-sub');
+const tdotsEl = document.getElementById('tdots');
+
+let morphTimer = null;
+function morphTo(t) {
+  if (morphTimer) { clearTimeout(morphTimer); morphTimer = null; }
+  appEl.style.backgroundColor = t.bg;
+  tdotsEl.style.color = t.color;
+
+  [logoEl, titleEl, subEl].forEach(function(el) {
+    el.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+  });
+
+  morphTimer = setTimeout(function() {
+    morphTimer = null;
+    logoEl.innerHTML = t.logo.t;
+    logoEl.style.fontFamily = t.logo.f; logoEl.style.fontSize = t.logo.s;
+    logoEl.style.fontWeight = t.logo.w || '400'; logoEl.style.letterSpacing = t.logo.ls;
+    logoEl.style.color = t.color;
+
+    titleEl.innerHTML = t.title.t;
+    titleEl.style.fontFamily = t.title.f; titleEl.style.fontSize = t.title.s;
+    titleEl.style.color = t.color;
+
+    subEl.innerHTML = t.sub.t;
+    subEl.style.fontFamily = t.sub.f; subEl.style.fontSize = t.sub.s;
+    subEl.style.color = t.color;
+
+    document.querySelectorAll('.tdot').forEach(function(d, i) { d.classList.toggle('active', i === ci); });
+
+    [logoEl, titleEl, subEl].forEach(function(el) {
+      el.style.transition = 'opacity 0.55s ease 0.05s, transform 0.55s ease 0.05s';
+      el.style.opacity = '1'; el.style.transform = 'translateY(0)';
+    });
+  }, 370);
+}
+
+function goTo(next) { if (next === ci) return; ci = next; morphTo(pageThemes[ci]); resetAuto(); }
+
+document.querySelectorAll('.tdot').forEach(function(dot) {
+  dot.addEventListener('click', function() { goTo(parseInt(this.getAttribute('data-i'))); });
+});
+
+function resetAuto() {
+  clearInterval(autoTimer);
+  if (paused) return;
+  autoTimer = setInterval(function() { ci = (ci + 1) % pageThemes.length; morphTo(pageThemes[ci]); }, 5000);
+}
+
+let paused = false;
+const pauseBtn = document.getElementById('tpause');
+const pauseIcon = document.getElementById('tpause-icon');
+const ICON_PAUSE = '<rect x="2" y="1.5" width="2" height="7"/><rect x="6" y="1.5" width="2" height="7"/>';
+const ICON_PLAY = '<polygon points="2.5,1.5 8.5,5 2.5,8.5"/>';
+pauseBtn.addEventListener('click', function() {
+  paused = !paused;
+  if (paused) {
+    clearInterval(autoTimer);
+    pauseIcon.innerHTML = ICON_PLAY;
+    pauseBtn.title = 'Resume theme rotation';
+    pauseBtn.setAttribute('aria-label', 'Resume theme rotation');
+    pauseBtn.classList.add('paused');
+  } else {
+    pauseIcon.innerHTML = ICON_PAUSE;
+    pauseBtn.title = 'Pause theme rotation';
+    pauseBtn.setAttribute('aria-label', 'Pause theme rotation');
+    pauseBtn.classList.remove('paused');
+    resetAuto();
+  }
+});
+
+appEl.style.backgroundColor = pageThemes[0].bg;
+tdotsEl.style.color = pageThemes[0].color;
+resetAuto();
+
+// ============================================================
+// VALIDATION
+// ============================================================
+let fileContent = '', fileValid = false;
+
+const cvKeywords = ['experience','education','skills','work','university','degree','project','intern','certif','language','contact','email','linkedin','github','bachelor','master','engineer','developer','designer','analyst','manager','research','award','summary','objective','profile','qualification'];
+
+function looksLikeCV(text) {
+  if (!text || text.length < 100) return false;
+  const lower = text.toLowerCase();
+  let hits = 0;
+  cvKeywords.forEach(function(kw) { if (lower.includes(kw)) hits++; });
+  return hits >= 3;
+}
+
+document.getElementById('cv-file').addEventListener('change', async function() {
+  if (!this.files[0]) return;
+  const file = this.files[0];
+  const statusEl = document.getElementById('upload-status');
+  const zone = document.getElementById('upload-zone');
+  const errEl = document.getElementById('upload-err');
+  const name = file.name.toLowerCase();
+
+  if (!name.match(/\.(pdf|txt|doc|docx)$/i)) {
+    statusEl.className = 'upload-status err';
+    statusEl.innerText = '✕ Invalid file type — please upload a PDF, TXT, or Word document.';
+    zone.classList.add('invalid'); zone.classList.remove('valid');
+    fileContent = ''; fileValid = false;
+    return;
+  }
+
+  statusEl.className = 'upload-status';
+  statusEl.innerText = 'Reading file…';
+  zone.classList.remove('valid', 'invalid');
+
+  try {
+    let text = '';
+    if (name.endsWith('.pdf')) {
+      text = await extractPdfText(file);
+    } else if (name.endsWith('.txt')) {
+      text = await file.text();
+    } else if (name.endsWith('.docx')) {
+      statusEl.className = 'upload-status err';
+      statusEl.innerText = '✕ .docx not supported yet — please export as PDF or paste the info below.';
+      zone.classList.add('invalid');
+      fileContent = ''; fileValid = false;
+      return;
+    } else if (name.endsWith('.doc')) {
+      statusEl.className = 'upload-status err';
+      statusEl.innerText = '✕ .doc not supported — please save as PDF and try again.';
+      zone.classList.add('invalid');
+      fileContent = ''; fileValid = false;
+      return;
+    }
+
+    if (!looksLikeCV(text)) {
+      statusEl.className = 'upload-status err';
+      statusEl.innerText = '✕ This doesn\'t look like a CV — make sure it includes experience, education, and skills.';
+      zone.classList.add('invalid');
+      errEl.className = 'field-err show';
+      errEl.innerText = 'Try a different file, or fill in the fields below manually instead.';
+      fileContent = ''; fileValid = false;
+      return;
+    }
+
+    fileContent = text; fileValid = true;
+    statusEl.className = 'upload-status';
+    statusEl.innerText = 'Parsing your CV with AI…';
+    zone.classList.add('valid');
+    errEl.className = 'field-err';
+
+    // Parse + auto-fill in the background
+    try {
+      const parseRes = await fetch('https://portfolioai.reema-a-otaibi.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'parse', text: text })
+      });
+      const parseData = await parseRes.json();
+      if (parseData.parsed) {
+        fillFormFromParsed(parseData.parsed);
+        statusEl.className = 'upload-status ok';
+        statusEl.innerText = '✓ CV parsed! Review the fields below and edit anything you want.';
+      } else {
+        statusEl.className = 'upload-status ok';
+        statusEl.innerText = '✓ CV uploaded. Couldn\'t auto-fill — review the fields below.';
+      }
+    } catch (e) {
+      statusEl.className = 'upload-status ok';
+      statusEl.innerText = '✓ CV uploaded. Couldn\'t auto-fill (connection issue) — review the fields below.';
+    }
+    updateProgress();
+  } catch (e) {
+    statusEl.className = 'upload-status err';
+    statusEl.innerText = '✕ Could not read this file: ' + e.message + '. Try a different PDF, or fill the fields below.';
+    zone.classList.add('invalid');
+    fileContent = ''; fileValid = false;
+  }
+});
+
+async function extractPdfText(file) {
+  if (!window.pdfjsLib) {
+    // PDF.js still loading — wait briefly
+    await new Promise(function(resolve) {
+      let tries = 0;
+      const iv = setInterval(function() {
+        if (window.pdfjsLib || tries++ > 30) { clearInterval(iv); resolve(); }
+      }, 100);
+    });
+  }
+  if (!window.pdfjsLib) throw new Error('PDF reader did not load');
+
+  const arrayBuf = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(function(item) { return item.str; }).join(' ');
+    pages.push(pageText);
+  }
+  return pages.join('\n\n');
+}
+
+function fillFormFromParsed(p) {
+  // Map parsed fields → form field ids. Only fill empty fields so the user's typing is never overwritten.
+  const fillMap = {
+    'f-name': p.name,
+    'f-title': p.title,
+    'f-edu': p.education,
+    'f-exp': p.experience,
+    'f-proj': p.projects,
+    'f-certs': p.certificates,
+    'f-contact': p.contact,
+    'f-extra': p.extra,
+  };
+  Object.keys(fillMap).forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el || !fillMap[id]) return;
+    if (el.value.trim()) return; // don't overwrite user input
+    el.value = fillMap[id];
+    // Brief highlight pulse to show what got filled
+    const ib = el.closest('.ib');
+    if (ib) {
+      ib.style.transition = 'background 0.4s ease, border-color 0.4s ease';
+      ib.style.background = 'rgba(34,197,94,0.10)';
+      ib.style.borderColor = 'rgba(34,197,94,0.5)';
+      setTimeout(function() { ib.style.background = ''; ib.style.borderColor = ''; }, 1400);
+    }
+  });
+  // Fill skills + languages as chips (skip if user already added some)
+  fillTagsFromParsed('skills-wrap', p.skills || []);
+  fillTagsFromParsed('langs-wrap', p.languages || []);
+}
+
+function fillTagsFromParsed(wrapId, items) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap || !items.length) return;
+  // If the user already added chips, leave them alone
+  const existing = wrap.querySelectorAll('.tag-chip').length;
+  if (existing > 0) return;
+  const input = wrap.querySelector('.tag-input');
+  items.forEach(function(name) {
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.innerHTML = name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <button onclick="removeTag(this)">×</button>';
+    wrap.insertBefore(chip, input);
+  });
+}
+
+function getFilledCount() {
+  return ['f-title','f-edu','f-exp','f-proj','f-certs','f-contact','f-extra'].filter(function(id) {
+    return document.getElementById(id).value.trim().length > 0;
+  }).length;
+}
+
+function updateProgress() {
+  const name = document.getElementById('f-name').value.trim();
+  const filled = getFilledCount();
+  const score = Math.min((name ? 1 : 0) + filled, 8);
+  const pct = Math.round((score / 8) * 100);
+  document.getElementById('prog-wrap').style.display = 'block';
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').innerText = pct + '%';
+  if (name) document.getElementById('ib-name').classList.remove('invalid');
+  if (document.getElementById('main-err').classList.contains('show') && score >= 2) {
+    document.getElementById('main-err').classList.remove('show');
+  }
+}
+
+function showErr(msg) {
+  const el = document.getElementById('main-err');
+  el.innerText = msg; el.classList.add('show');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function validateAndNext() {
+  // flush any unsubmitted tag text
+  ['skills-wrap','langs-wrap'].forEach(function(id){
+    const inp = document.querySelector('#' + id + ' .tag-input');
+    if (inp && inp.value.trim()) {
+      handleTagInput({key:'Enter', preventDefault:function(){}, target:inp}, id);
+    }
+  });
+
+  const name = document.getElementById('f-name').value.trim();
+  const filled = getFilledCount();
+  document.getElementById('ib-name').classList.remove('invalid');
+  document.getElementById('main-err').classList.remove('show');
+
+  if (!name) {
+    document.getElementById('ib-name').classList.add('invalid');
+    showErr('Your name is required — your bot needs to know who it\'s representing!');
+    return;
+  }
+
+  if (!fileValid && filled < 2) {
+    showErr('Please add more info — upload your CV, or fill in at least 2 fields (education, experience, or projects) so your bot has something to say!');
+    ['f-edu','f-exp','f-proj'].forEach(function(id) {
+      const ib = document.getElementById(id).closest('.ib');
+      if (!document.getElementById(id).value.trim()) {
+        ib.classList.add('highlight');
+        setTimeout(function() { ib.classList.remove('highlight'); }, 3000);
+      }
+    });
+    return;
+  }
+
+  goStep(2);
+}
+
+// ============================================================
+// STEPS + BUILDER
+// ============================================================
+let selectedTheme = 'corporate', botOpen = false, customDesc = '';
+
+function goStep(n) {
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById('panel' + i).classList.remove('active');
+    const sn = document.getElementById('sn' + i);
+    if (sn) sn.classList.remove('active', 'done');
+  }
+  document.getElementById('panel' + n).classList.add('active');
+  for (let i = 1; i <= 3; i++) {
+    const sn = document.getElementById('sn' + i); if (!sn) continue;
+    if (i < n) sn.classList.add('done'); else if (i === n) sn.classList.add('active');
+  }
+  // Pause auto-rotation when leaving step 1 (theme distraction); resume when returning
+  if (n === 1) {
+    // Snap page chrome immediately back to current rotation theme
+    morphTo(pageThemes[ci]);
+    if (paused && pauseBtn && pauseIcon) {
+      // user manually paused — leave it alone
+    } else {
+      resetAuto();
+    }
+  } else {
+    clearInterval(autoTimer);
+    if (morphTimer) { clearTimeout(morphTimer); morphTimer = null; }
+    // Lock page bg to currently-selected theme so the picker is visible against its own preview
+    applyPageThemeFromBot(selectedTheme);
+    // Update theme card preview names to use the user's first name
+    if (n === 2) updateThemeCardNames();
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateThemeCardNames() {
+  const raw = document.getElementById('f-name').value.trim() || 'You';
+  const first = raw.split(' ')[0];
+  const styled = {
+    corporate: first,
+    matrix: '> ' + first.toUpperCase(),
+    y2k: '★ ' + first + ' ★',
+    cyber: first.toUpperCase(),
+    aero: first,
+    brutal: first.toUpperCase() + '.',
+  };
+  document.querySelectorAll('.theme-grid .tc').forEach(function(card) {
+    const key = card.getAttribute('data-theme');
+    if (!styled[key]) return; // skip custom card
+    const nameEl = card.querySelector('.tc-preview-name');
+    if (nameEl) nameEl.innerText = styled[key];
+  });
+}
+
+// Apply a bot theme's colors to the page chrome (for step 2/3 preview)
+function applyPageThemeFromBot(themeKey) {
+  const t = (themeKey === 'custom' && customTheme) ? customTheme : (botThemes[themeKey] || botThemes.corporate);
+  appEl.style.transition = 'background-color 0.6s cubic-bezier(0.4,0,0.2,1), color 0.6s cubic-bezier(0.4,0,0.2,1)';
+  appEl.style.backgroundColor = t.bg;
+  appEl.style.color = t.text;
+  tdotsEl.style.color = t.text;
+  // Restyle the intro title/logo/sub so they match the bot theme
+  // (these have inline styles set by morphTo, so we override here)
+  const transition = 'color 0.6s ease, font-family 0.4s ease';
+  [logoEl, titleEl, subEl].forEach(function(el) {
+    el.style.transition = transition;
+    el.style.color = t.text;
+  });
+  logoEl.style.fontFamily = t.font;
+  titleEl.style.fontFamily = t.fontD;
+  subEl.style.fontFamily = t.font;
+}
+
+document.querySelectorAll('.tc').forEach(function(c) {
+  c.addEventListener('click', function() {
+    document.querySelectorAll('.tc').forEach(function(x) { x.classList.remove('selected'); });
+    this.classList.add('selected');
+    selectedTheme = this.getAttribute('data-theme');
+    applyPageThemeFromBot(selectedTheme);
+  });
+});
+
+function toggleBot() {
+  botOpen = !botOpen;
+  document.getElementById('bot-box').style.display = botOpen ? 'block' : 'none';
+  document.getElementById('bot-toggle').classList.toggle('open', botOpen);
+  document.getElementById('bot-toggle').innerText = botOpen ? '− Close AI theme designer' : '+ Design my own theme with AI →';
+}
+
+function addBotMsg(r, t) {
+  const b = document.getElementById('bot-msgs');
+  const d = document.createElement('div'); d.className = 'bm ' + r; d.innerText = t;
+  b.appendChild(d); b.scrollTop = 99999;
+}
+
+function sendBot() {
+  const i = document.getElementById('bot-input');
+  const v = i.value.trim();
+  if (!v) return;
+  i.value = '';
+  addBotMsg('user', v);
+  customDesc = v;
+  generateCustomTheme(v);
+}
+
+let customTheme = null; // stored full theme object when generated
+
+function addTypingMsg() {
+  const b = document.getElementById('bot-msgs');
+  const d = document.createElement('div');
+  d.className = 'bm bot';
+  d.id = 'bot-typing';
+  d.innerText = 'Thinking up colors and fonts…';
+  b.appendChild(d);
+  b.scrollTop = 99999;
+}
+function removeTypingMsg() {
+  const t = document.getElementById('bot-typing');
+  if (t) t.remove();
+}
+
+async function generateCustomTheme(vibe) {
+  addTypingMsg();
+  document.getElementById('bot-input').disabled = true;
+  try {
+    const r = await fetch('https://portfolioai.reema-a-otaibi.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'theme', vibe: vibe })
+    });
+    const data = await r.json();
+    removeTypingMsg();
+    if (!data.theme) {
+      addBotMsg('bot', (data.error || 'Something went wrong.') + ' Try a clearer vibe — e.g. "minimal warm beige" or "deep-sea bioluminescent".');
+      return;
+    }
+    // Build the full theme from the 5 anchor colors
+    const t = data.theme;
+    customTheme = buildThemeFromAnchors(t);
+    addBotMsg('bot', '✓ Custom theme ready! Pick "Your custom theme" from the grid above. Click send again to regenerate.');
+    injectCustomThemeCard(t);
+  } catch (e) {
+    removeTypingMsg();
+    addBotMsg('bot', 'Connection error: ' + e.message + '. Try again?');
+  } finally {
+    document.getElementById('bot-input').disabled = false;
+  }
+}
+
+// Derive border/text2/text3/etc from 5 anchors via alpha overlays
+function buildThemeFromAnchors(t) {
+  const bg = t.bg, surface = t.surface, text = t.text, accent = t.accent, accent2 = t.accent2;
+  // Use text color with varying alpha for muted text and borders
+  const tRgb = hexToRgbArr(text);
+  const rgba = function(a) { return 'rgba(' + tRgb[0] + ',' + tRgb[1] + ',' + tRgb[2] + ',' + a + ')'; };
+  return {
+    bg: bg,
+    surface: surface,
+    border: rgba(0.15),
+    border2: rgba(0.3),
+    accent: accent,
+    accent2: accent2,
+    text: text,
+    text2: rgba(0.65),
+    text3: rgba(0.4),
+    green: accent,
+    ub: rgba(0.06),
+    uborder: rgba(0.18),
+    ut: text,
+    font: "'" + t.font + "',sans-serif",
+    fontD: "'" + t.fontDisplay + "',sans-serif",
+    fonts: "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(t.font).replace(/%20/g, '+') + "&family=" + encodeURIComponent(t.fontDisplay).replace(/%20/g, '+') + "&display=swap"
+  };
+}
+
+function hexToRgbArr(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function injectCustomThemeCard(t) {
+  // Remove old custom card if present, then insert fresh one
+  const existing = document.querySelector('[data-theme="custom"]');
+  if (existing) existing.remove();
+  const grid = document.querySelector('.theme-grid');
+  const first = (document.getElementById('f-name').value.trim() || 'You').split(' ')[0];
+  const card = document.createElement('div');
+  card.className = 'tc';
+  card.setAttribute('data-theme', 'custom');
+  card.innerHTML =
+    '<div class="tc-preview" style="background:' + t.bg + ';color:' + t.text + ';font-family:\'' + t.fontDisplay + '\',sans-serif;">' +
+      '<div class="tc-preview-name">✨ ' + first + '</div>' +
+      '<div class="tc-preview-bubble" style="background:' + t.surface + ';border:1px solid ' + t.accent + ';color:' + t.accent2 + ';font-family:\'' + t.font + '\',sans-serif;">custom vibe</div>' +
+    '</div>' +
+    '<div class="tc-meta"><div class="tc-name">Your custom theme</div><div class="tc-desc">AI-generated</div></div>';
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.tc').forEach(function(x) { x.classList.remove('selected'); });
+    card.classList.add('selected');
+    selectedTheme = 'custom';
+    applyPageThemeFromBot('custom');
+  });
+  grid.appendChild(card);
+  // Auto-select it
+  document.querySelectorAll('.tc').forEach(function(x) { x.classList.remove('selected'); });
+  card.classList.add('selected');
+  selectedTheme = 'custom';
+  applyPageThemeFromBot('custom');
+}
+
+function removeTag(btn) { btn.parentElement.remove(); }
+
+function handleTagInput(e, id) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  const input = e.target;
+  const val = input.value.trim();
+  if (!val) return;
+  const wrap = document.getElementById(id);
+  const chip = document.createElement('span');
+  chip.className = 'tag-chip';
+  chip.innerHTML = val.replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <button onclick="removeTag(this)">×</button>';
+  wrap.insertBefore(chip, input);
+  input.value = '';
+}
+
+function addTag(id) {
+  const n = prompt('Add:'); if (!n || !n.trim()) return;
+  const w = document.getElementById(id);
+  const target = w.querySelector('.tag-input') || w.querySelector('.tag-add');
+  const c = document.createElement('span'); c.className = 'tag-chip';
+  c.innerHTML = n.trim() + ' <button onclick="removeTag(this)">×</button>';
+  w.insertBefore(c, target);
+}
+
+function getTags(id) {
+  return Array.from(document.querySelectorAll('#' + id + ' .tag-chip')).map(function(c) {
+    return c.innerText.replace('×', '').trim();
+  }).join(', ');
+}
+
+function getTagsArr(id) {
+  return Array.from(document.querySelectorAll('#' + id + ' .tag-chip')).map(function(c) {
+    return c.innerText.replace('×', '').trim();
+  }).filter(function(s) { return s.length > 0; });
+}
+
+function buildInfo() {
+  // Always read from form fields. Upload auto-fills them, but the user can edit/override.
+  let s = '';
+  [['f-name','NAME'],['f-title','TITLE'],['f-edu','EDUCATION'],['f-exp','EXPERIENCE'],['f-proj','PROJECTS'],['f-certs','CERTIFICATES'],['f-contact','CONTACT'],['f-extra','OTHER']].forEach(function(f) {
+    const v = document.getElementById(f[0]).value.trim(); if (v) s += f[1] + ': ' + v + '\n';
+  });
+  const sk = getTags('skills-wrap'); if (sk) s += 'SKILLS: ' + sk + '\n';
+  const lg = getTags('langs-wrap'); if (lg) s += 'LANGUAGES: ' + lg + '\n';
+  if (customDesc) s += 'VIBE/PERSONALITY: ' + customDesc + '\n';
+  return s;
+}
+
+function doGenerate() {
+  goStep(3);
+  document.getElementById('gen-box').style.display = 'block';
+  document.getElementById('done-wrap').style.display = 'none';
+  const name = document.getElementById('f-name').value.trim() || 'You';
+  const info = buildInfo();
+
+  setTimeout(function() {
+    document.getElementById('gen-box').style.display = 'none';
+    document.getElementById('done-wrap').style.display = 'block';
+    // Build the mini theme strip + initial preview
+    renderMiniThemes(name, info);
+    swapPreviewTheme(selectedTheme, name, info);
+    // Wire download to always grab the *currently previewed* theme
+    document.getElementById('dl-btn').onclick = function() {
+      const finalName = document.getElementById('f-name').value.trim() || 'You';
+      const finalInfo = buildInfo();
+      const finalTitle = document.getElementById('f-title').value.trim();
+      const finalSkills = getTagsArr('skills-wrap');
+      const finalLangs = getTagsArr('langs-wrap');
+      const html = buildBotHTML(finalName, finalInfo, currentPreviewTheme, customDesc, finalTitle, finalSkills, finalLangs);
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'index.html'; a.click();
+      URL.revokeObjectURL(url);
+    };
+  }, 2200);
+}
+
+// ============================================================
+// LIVE PREVIEW
+// ============================================================
+let currentPreviewTheme = 'corporate';
+
+const PRESET_THEMES = [
+  { key: 'corporate', name: 'Corporate', bg: '#F8F9FA', fg: '#1C1C2E', font: "'Instrument Serif',serif" },
+  { key: 'matrix', name: 'Matrix', bg: '#0D1F1A', fg: '#4ade80', font: "'Share Tech Mono',monospace" },
+  { key: 'y2k', name: 'Y2K', bg: '#e8f4ff', fg: '#7c3aed', font: "'VT323',monospace" },
+  { key: 'cyber', name: 'Cyber', bg: '#08030F', fg: '#00fff5', font: "'Orbitron',sans-serif" },
+  { key: 'aero', name: 'Aero', bg: '#dff0ff', fg: '#0a3d62', font: "'Syne',sans-serif" },
+  { key: 'brutal', name: 'Brutal', bg: '#F5F500', fg: '#000', font: "'Bebas Neue',sans-serif" },
+];
+
+function renderMiniThemes(name, info) {
+  const grid = document.getElementById('theme-mini-grid');
+  grid.innerHTML = '';
+  PRESET_THEMES.forEach(function(t) {
+    const tile = document.createElement('div');
+    tile.className = 'tm';
+    tile.setAttribute('data-theme', t.key);
+    tile.style.background = t.bg;
+    tile.style.color = t.fg;
+    tile.style.fontFamily = t.font;
+    tile.innerText = t.name;
+    tile.addEventListener('click', function() { swapPreviewTheme(t.key, name, info); });
+    grid.appendChild(tile);
+  });
+  // Custom theme slot — populated when one exists, otherwise a placeholder
+  const slot = document.createElement('div');
+  slot.id = 'tm-custom-slot';
+  slot.className = 'tm tm-empty';
+  slot.innerText = '✨ custom';
+  slot.style.color = 'inherit';
+  if (customTheme) {
+    slot.classList.remove('tm-empty');
+    slot.style.background = customTheme.bg;
+    slot.style.color = customTheme.text;
+    slot.style.fontFamily = customTheme.fontD;
+    slot.addEventListener('click', function() { swapPreviewTheme('custom', name, info); });
+  }
+  grid.appendChild(slot);
+}
+
+function swapPreviewTheme(themeKey, name, info) {
+  if (themeKey === 'custom' && !customTheme) return;
+  // Pull name/info from current form if not passed
+  if (!name) name = document.getElementById('f-name').value.trim() || 'You';
+  if (!info) info = buildInfo();
+  const title = document.getElementById('f-title').value.trim();
+  const skills = getTagsArr('skills-wrap');
+  const langs = getTagsArr('langs-wrap');
+  currentPreviewTheme = themeKey;
+  const html = buildBotHTML(name, info, themeKey, customDesc, title, skills, langs);
+  const iframe = document.getElementById('preview-iframe');
+  iframe.srcdoc = html;
+  // Update selected state on mini tiles
+  document.querySelectorAll('#theme-mini-grid .tm').forEach(function(el) {
+    el.classList.toggle('selected', el.getAttribute('data-theme') === themeKey || (themeKey === 'custom' && el.id === 'tm-custom-slot'));
+  });
+  // Also sync page chrome to selected theme
+  applyPageThemeFromBot(themeKey);
+}
+
+async function regenVibeFromPreview() {
+  const input = document.getElementById('preview-vibe-input');
+  const btn = document.getElementById('preview-vibe-btn');
+  const status = document.getElementById('preview-vibe-status');
+  const vibe = input.value.trim();
+  if (!vibe) return;
+  btn.disabled = true;
+  status.className = 'preview-vibe-status';
+  status.innerText = 'Thinking up colors and fonts…';
+  try {
+    const r = await fetch('https://portfolioai.reema-a-otaibi.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'theme', vibe: vibe })
+    });
+    const data = await r.json();
+    if (!data.theme) {
+      status.className = 'preview-vibe-status err';
+      status.innerText = (data.error || 'Something went wrong.') + ' Try a clearer vibe.';
+      return;
+    }
+    customDesc = vibe;
+    customTheme = buildThemeFromAnchors(data.theme);
+    // Refresh the step-2 custom card too (so it's in sync if user goes back)
+    injectCustomThemeCard(data.theme);
+    // Refresh the mini-theme slot
+    const slot = document.getElementById('tm-custom-slot');
+    if (slot) {
+      slot.classList.remove('tm-empty');
+      slot.style.background = customTheme.bg;
+      slot.style.color = customTheme.text;
+      slot.style.fontFamily = customTheme.fontD;
+      // Re-bind click (replacing the element is simpler than removing listeners)
+      const newSlot = slot.cloneNode(true);
+      slot.parentNode.replaceChild(newSlot, slot);
+      newSlot.addEventListener('click', function() { swapPreviewTheme('custom'); });
+    }
+    swapPreviewTheme('custom');
+    status.className = 'preview-vibe-status ok';
+    status.innerText = '✓ Custom theme applied. Try again to regenerate, or download below.';
+    input.value = '';
+  } catch (e) {
+    status.className = 'preview-vibe-status err';
+    status.innerText = 'Connection error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function startOver() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-edu').value = '';
+  document.getElementById('f-exp').value = '';
+  document.getElementById('f-proj').value = '';
+  document.getElementById('f-certs').value = '';
+  document.getElementById('f-contact').value = '';
+  document.getElementById('f-extra').value = '';
+  document.getElementById('upload-status').innerText = '';
+  document.getElementById('upload-status').className = 'upload-status';
+  document.getElementById('upload-zone').classList.remove('valid','invalid');
+  document.getElementById('prog-wrap').style.display = 'none';
+  document.getElementById('prog-fill').style.width = '0%';
+  fileContent = ''; fileValid = false; selectedTheme = 'corporate'; customDesc = '';
+  customTheme = null;
+  const customCard = document.querySelector('[data-theme="custom"]');
+  if (customCard) customCard.remove();
+  // Clear any tags the user added
+  ['skills-wrap','langs-wrap'].forEach(function(id){
+    document.querySelectorAll('#' + id + ' .tag-chip').forEach(function(c) { c.remove(); });
+    const inp = document.querySelector('#' + id + ' .tag-input');
+    if (inp) inp.value = '';
+  });
+  // Reset the bot chat messages
+  document.getElementById('bot-msgs').innerHTML = '<div class="bm bot">Describe a vibe — colors, mood, aesthetic. e.g. "deep-sea bioluminescent", "warm minimal beige", "Y2K cyber-pop". I\'ll generate a custom theme just for you.</div>';
+  document.querySelectorAll('.tc').forEach(function(c) { c.classList.remove('selected'); });
+  document.querySelector('[data-theme="corporate"]').classList.add('selected');
+  goStep(1);
+}
+
+// ============================================================
+// BOT HTML BUILDER
+// ============================================================
+const botThemes = {
+  corporate:{bg:'#F8F9FA',surface:'#fff',border:'#E5E7EB',border2:'#D1D5DB',accent:'#1C1C2E',accent2:'#374151',text:'#1C1C2E',text2:'#6B7280',text3:'#9CA3AF',green:'#16a34a',ub:'#EFF6FF',uborder:'#BFDBFE',ut:'#1e40af',font:"'Instrument Sans',sans-serif",fontD:"'Instrument Serif',Georgia,serif",fonts:"https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600&display=swap"},
+  matrix:{bg:'#0D1F1A',surface:'#122820',border:'rgba(74,222,128,0.15)',border2:'rgba(74,222,128,0.3)',accent:'#4ade80',accent2:'#86efac',text:'#e8fff2',text2:'#86c4a0',text3:'#3d6b52',green:'#4ade80',ub:'rgba(74,222,128,0.1)',uborder:'rgba(74,222,128,0.3)',ut:'#e8fff2',font:"'Share Tech Mono',monospace",fontD:"'Share Tech Mono',monospace",fonts:"https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap"},
+  y2k:{bg:'#e8f4ff',surface:'#fff',border:'#a855f7',border2:'#7c3aed',accent:'#7c3aed',accent2:'#9333ea',text:'#1a0050',text2:'#6d28d9',text3:'#9333ea',green:'#16a34a',ub:'#faf5ff',uborder:'#a855f7',ut:'#1a0050',font:"'VT323',monospace",fontD:"'VT323',monospace",fonts:"https://fonts.googleapis.com/css2?family=VT323&display=swap"},
+  cyber:{bg:'#08030F',surface:'rgba(0,255,245,0.04)',border:'rgba(0,255,245,0.18)',border2:'rgba(0,255,245,0.35)',accent:'#00fff5',accent2:'#ff00aa',text:'#00fff5',text2:'rgba(0,255,245,0.6)',text3:'rgba(0,255,245,0.3)',green:'#00fff5',ub:'rgba(255,0,170,0.08)',uborder:'rgba(255,0,170,0.35)',ut:'#ff00aa',font:"'IBM Plex Mono',monospace",fontD:"'Orbitron',sans-serif",fonts:"https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Orbitron:wght@700;900&display=swap"},
+  aero:{bg:'#dff0ff',surface:'rgba(255,255,255,0.85)',border:'#a8d8ea',border2:'#5fa8d3',accent:'#1a6fa0',accent2:'#5fa8d3',text:'#0a3d62',text2:'#1a6fa0',text3:'#5fa8d3',green:'#16a34a',ub:'rgba(255,255,255,0.9)',uborder:'#a8d8ea',ut:'#0a3d62',font:"'Instrument Sans',sans-serif",fontD:"'Syne',sans-serif",fonts:"https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap"},
+  brutal:{bg:'#F5F500',surface:'#fff',border:'#000',border2:'#000',accent:'#000',accent2:'#333',text:'#000',text2:'#222',text3:'#555',green:'#000',ub:'#fff',uborder:'#000',ut:'#000',font:"'IBM Plex Mono',monospace",fontD:"'Bebas Neue',sans-serif",fonts:"https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Bebas+Neue&display=swap"}
+};
+
+function buildBotHTML(name, info, tn, cd, title, skills, langs) {
+  const t = (tn === 'custom' && customTheme) ? customTheme : (botThemes[tn] || botThemes.corporate);
+  const f = name.split(' ')[0];
+  const sys = cd ? '\nVIBE/PERSONALITY: ' + cd : '';
+  // Sidebar content blocks built from form data
+  const titleStr = (title || '').trim();
+  const skillChips = (skills && skills.length)
+    ? '<div><div class="sl">// skills</div><div class="tags">' + skills.map(function(s){return '<span class="tag">' + s.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';}).join('') + '</div></div>'
+    : '';
+  const langChips = (langs && langs.length)
+    ? '<div><div class="sl">// languages</div><div class="tags">' + langs.map(function(s){return '<span class="tag">' + s.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';}).join('') + '</div></div>'
+    : '';
+  const titleLine = titleStr ? '<div class="pt">' + titleStr.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '';
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8"/>\n<meta name="viewport" content="width=device-width,initial-scale=1.0"/>\n<title>' + name + ' \u2014 Portfolio</title>\n<link href="' + t.fonts + '" rel="stylesheet"/>\n<style>\n*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}\nhtml,body{height:100%;background:' + t.bg + ';color:' + t.text + ';font-family:' + t.font + ';}\n.layout{display:grid;grid-template-columns:280px 1fr;height:100vh;max-width:1100px;margin:0 auto;}\n.sidebar{border-right:1px solid ' + t.border + ';padding:40px 28px;display:flex;flex-direction:column;gap:28px;overflow-y:auto;}\n.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid ' + t.border2 + ';border-radius:2px;font-size:10px;letter-spacing:.15em;color:' + t.accent2 + ';text-transform:uppercase;}\n.dl{width:6px;height:6px;border-radius:50%;background:' + t.green + ';animation:pulse 2s infinite;}\n@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}\n.pn{font-family:' + t.fontD + ';font-size:26px;font-weight:700;line-height:1.1;color:' + t.text + ';}\n.pn span{color:' + t.accent + ';}\n.pt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:' + t.text3 + ';margin-top:6px;}\n.sl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:' + t.text3 + ';margin-bottom:10px;}\n.tags{display:flex;flex-wrap:wrap;gap:6px;}\n.tag{padding:3px 9px;border:1px solid ' + t.border + ';border-radius:2px;font-size:11px;color:' + t.text2 + ';}\n.tag-link{text-decoration:none;cursor:pointer;transition:color 0.15s,border-color 0.15s;}\n.tag-link:hover{color:' + t.accent2 + ';border-color:' + t.accent + ';}\n.sb-built{margin-top:auto;padding-top:18px;}\n.chat-area{display:flex;flex-direction:column;}\n.ch{padding:18px 24px;border-bottom:1px solid ' + t.border + ';display:flex;justify-content:space-between;align-items:center;}\n.ct{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:' + t.text3 + ';}\n.ct span{color:' + t.accent2 + ';}\n.msgs{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;}\n.mw{display:flex;flex-direction:column;gap:3px;}\n.mw.u{align-items:flex-end;}.mw.b{align-items:flex-start;}\n.ml{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:' + t.text3 + ';padding:0 3px;}\n.bubble{padding:11px 15px;border-radius:4px;font-size:13px;line-height:1.7;max-width:75%;}\n.mw.u .bubble{background:' + t.ub + ';border:1px solid ' + t.uborder + ';color:' + t.ut + ';border-bottom-right-radius:1px;}\n.mw.b .bubble{background:' + t.surface + ';border:1px solid ' + t.border + ';color:' + t.text2 + ';border-bottom-left-radius:1px;}\n.typing{display:flex;gap:4px;align-items:center;padding:12px 15px;}\n.typing span{width:5px;height:5px;border-radius:50%;background:' + t.text3 + ';animation:blink 1.2s infinite;}\n.typing span:nth-child(2){animation-delay:.2s;}.typing span:nth-child(3){animation-delay:.4s;}\n@keyframes blink{0%,60%,100%{opacity:.2}30%{opacity:1}}\n.chips{padding:10px 24px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid ' + t.border + ';}\n.chip{padding:5px 13px;border:1px solid ' + t.border + ';border-radius:2px;font-size:11px;font-family:' + t.font + ';color:' + t.text3 + ';background:transparent;cursor:pointer;transition:all .15s;}\n.chip:hover{border-color:' + t.accent + ';color:' + t.accent2 + ';}\n.ir{padding:14px 24px;border-top:1px solid ' + t.border + ';display:flex;gap:10px;align-items:center;}\n.disc{padding:8px 24px 12px;font-size:10px;color:' + t.text3 + ';text-align:center;line-height:1.5;opacity:0.7;}\n.disc a{color:inherit;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:0.5px;}\n.disc a:hover{opacity:1;color:' + t.accent2 + ';}\n.px{font-size:13px;color:' + t.accent + ';}\n#ui{flex:1;background:transparent;border:none;outline:none;font-family:' + t.font + ';font-size:13px;color:' + t.text + ';caret-color:' + t.accent + ';}\n#ui::placeholder{color:' + t.text3 + ';}\n#sb{padding:7px 16px;background:transparent;border:1px solid ' + t.border2 + ';border-radius:2px;font-family:' + t.font + ';font-size:11px;letter-spacing:.1em;color:' + t.accent2 + ';cursor:pointer;text-transform:uppercase;transition:all .15s;}\n#sb:hover{border-color:' + t.accent + ';}\n@media(max-width:650px){.layout{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;min-height:100vh;}.sidebar{border-right:none;border-bottom:1px solid ' + t.border + ';padding:24px 16px;}.bubble{max-width:90%;}}\n</style>\n</head>\n<body>\n<div class="layout">\n<aside class="sidebar">\n<div><div class="badge"><span class="dl"></span> open to opportunities</div></div>\n<div><div class="pn"><span>' + f + '</span><br>' + name.split(' ').slice(1).join(' ') + '</div>' + titleLine + '</div>\n' + skillChips + '\n' + langChips + '\n<div class="sb-built"><div class="sl">// built with</div><div class="tags"><a class="tag tag-link" href="https://portfolioai.reemaotaibi.github.io" target="_blank" rel="noopener">PortfolioAI</a><span class="tag">GitHub Pages</span></div></div>\n</aside>\n<main class="chat-area">\n<div class="ch"><div class="ct">// ask about <span>' + f.toLowerCase() + '</span></div><div style="font-size:11px;color:' + t.text3 + ';">AI-powered \xb7 RAG portfolio</div></div>\n<div class="msgs" id="msgs"></div>\n<div class="chips">\n<button class="chip" data-msg="Tell me about your background">\u2192 background?</button>\n<button class="chip" data-msg="What are your best projects?">\u2192 projects?</button>\n<button class="chip" data-msg="Why should I hire you?">\u2192 why hire?</button>\n<button class="chip" data-msg="How can I contact you?">\u2192 contact?</button>\n</div>\n<div class="ir"><span class="px">&gt;_</span><input id="ui" type="text" placeholder="ask me anything about ' + f + '..."/><button id="sb">send</button></div>\n<div class=\"disc\">AI can make mistakes \xb7 Verify important info</div>\n</main>\n</div>\n<script>\nconst SYS=`You are an AI portfolio assistant representing ' + name + ' to recruiters and companies. Be confident, enthusiastic, and concise. Speak in third person about ' + name + '. Keep answers to 2-4 sentences unless more detail is needed.' + sys + '\n\nHere is everything you know about ' + name + ':\n\n' + info.replace(/`/g, "'") + '`;\nconst H=[];\nfunction aM(r,t,s){if(!s)H.push({role:r==="b"?"assistant":"user",content:t});const w=document.createElement("div");w.className="mw "+(r==="u"?"u":"b");const l=document.createElement("div");l.className="ml";l.innerText=r==="u"?"you":"' + f.toLowerCase() + '.ai";const b=document.createElement("div");b.className="bubble";b.innerText=t;w.appendChild(l);w.appendChild(b);document.getElementById("msgs").appendChild(w);document.getElementById("msgs").scrollTop=99999;}\nfunction aT(){const w=document.createElement("div");w.className="mw b";w.id="ty";const l=document.createElement("div");l.className="ml";l.innerText="' + f.toLowerCase() + '.ai";const b=document.createElement("div");b.className="bubble typing";b.innerHTML="<span></span><span></span><span></span>";w.appendChild(l);w.appendChild(b);document.getElementById("msgs").appendChild(w);document.getElementById("msgs").scrollTop=99999;}\nfunction rT(){const e=document.getElementById("ty");if(e)e.remove();}\nasync function cA(m){aT();try{const ms=H.filter(x=>x.content&&x.content.trim()).slice(-12).map(x=>({role:x.role==="assistant"?"chatbot":"user",message:x.content}));const last=ms.length>0?ms.pop():{message:m};const r=await fetch("https://portfolioai.reema-a-otaibi.workers.dev",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({preamble:SYS,chat_history:ms,message:last.message})});const d=await r.json();rT();aM("b",d.text||"Something went wrong. Try again!");}catch(e){rT();aM("b","Connection error: "+e.message);}}\ndocument.getElementById("sb").addEventListener("click",function(){const i=document.getElementById("ui");const v=i.value.trim();if(!v)return;i.value="";aM("u",v);cA(v);});\ndocument.getElementById("ui").addEventListener("keydown",function(e){if(e.key==="Enter"){const v=this.value.trim();if(!v)return;this.value="";aM("u",v);cA(v);}});\ndocument.querySelectorAll(".chip").forEach(function(b){b.addEventListener("click",function(){const m=this.getAttribute("data-msg");const d=this.innerText.replace("\u2192 ","");aM("u",d);cA(m);});});\naM("b","Hi! I\'m ' + name + '\'s AI Portfolio Assistant. Ask me about them and why they\'d be a great addition to your team!",true);\n<\/script>\n</body>\n</html>';
+}
+</script>
+</body>
+</html>
